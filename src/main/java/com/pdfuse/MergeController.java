@@ -12,10 +12,15 @@ public final class MergeController {
 
     public static PdfMerger.Result merge(List<String> rawInputs, Path output, boolean overwrite)
             throws MergeException {
+        return merge(rawInputs, output, overwrite, null);
+    }
+
+    public static PdfMerger.Result merge(List<String> rawInputs, Path output, boolean overwrite,
+            String password) throws MergeException {
         List<MergeInput> inputs = new ArrayList<>(rawInputs.size());
         for (String raw : rawInputs) {
             inputs.add(MergeInput.parse(raw));
         }
-        return PdfMerger.merge(inputs, output, overwrite);
+        return PdfMerger.merge(inputs, output, overwrite, password);
     }
 }

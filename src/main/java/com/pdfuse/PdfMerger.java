@@ -26,6 +26,8 @@ import org.apache.pdfbox.multipdf.PDFMergerUtility;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
+import org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy;
 import org.apache.pdfbox.pdmodel.interactive.action.PDAction;
 import org.apache.pdfbox.pdmodel.interactive.action.PDActionGoTo;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
@@ -52,8 +54,16 @@ public final class PdfMerger {
 
     public static Result merge(List<MergeInput> inputs, Path output, boolean overwrite)
             throws MergeException {
+        return merge(inputs, output, overwrite, null);
+    }
+
+    public static Result merge(List<MergeInput> inputs, Path output, boolean overwrite,
+            String password) throws MergeException {
         long start = System.nanoTime();
 
+        if (password != null && password.isEmpty()) {
+            throw new MergeException("password must not be empty");
+        }
         if (inputs.size() < 2) {
             throw new MergeException("at least two inputs are required");
         }
@@ -74,6 +84,15 @@ public final class PdfMerger {
             // portant le même nom produisent un arbre /EmbeddedFiles invalide.
             dedupeAttachmentNames(destination);
             ensurePageLabelsStartAtZero(destination);
+
+            if (password != null) {
+                AccessPermission permissions = new AccessPermission();
+                StandardProtectionPolicy policy =
+                        new StandardProtectionPolicy(password, password, permissions);
+                policy.setEncryptionKeyLength(256);
+                policy.setPreferAES(true);
+                destination.protect(policy);
+            }
 
             // CREATE_NEW applique l'umask : le fichier final n'hérite pas du 0600
             // que Files.createTempFile impose aux fichiers temporaires.

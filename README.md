@@ -26,6 +26,7 @@ Options :
 |---|---|
 | `-o`, `--output` | fichier de sortie (obligatoire) |
 | `-f`, `--force` | écrase la sortie si elle existe |
+| `--password <mdp>` | protège la sortie en AES-256 |
 | `-h`, `--help` | aide |
 | `-V`, `--version` | version |
 
@@ -62,6 +63,20 @@ sont nettoyées : signets hors plage supprimés, liens internes vers des pages
 retirées supprimés, champs de formulaire orphelins retirés. Les labels de pages
 du document extrait sont retirés (ils décriraient l'ancienne pagination).
 Métadonnées et pièces jointes sont conservées.
+
+## Protection de la sortie
+
+```bash
+java -jar target/pdfuse.jar a.pdf b.pdf -o confidentiel.pdf --password secret
+```
+
+Le PDF produit est chiffré en **AES-256** (R6, V5). Le mot de passe est exigé
+à l'ouverture ; le même mot de passe sert de mot de passe propriétaire, avec
+toutes les permissions accordées. Un mot de passe vide est refusé.
+
+Attention : un mot de passe passé en argument est visible dans l'historique du
+shell et la liste des processus. Pour un usage sensible, un `--password-file`
+ou une saisie interactive sera préférable.
 
 ## Tests
 
@@ -105,6 +120,8 @@ légèrement corrompus (xref/startxref manquant) sont récupérés par PDFBox.
   vers une page retirée peut rester inerte.
 - Fusionner un PDF signé invalide sa signature : aucun avertissement n'est
   encore émis.
+- `--password` est visible dans l'historique du shell et la liste des
+  processus ; les permissions du PDF protégé ne sont pas configurables.
 - La sortie utilise des xref streams ; qpdf émet un avertissement bénin
   (« xref entry for the xref stream itself is missing »), validé par
   `pdfcpu validate -m strict` et lisible par PDFium/Acrobat.

@@ -19,6 +19,7 @@ import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.pdfbox.pdmodel.interactive.action.PDActionGoTo;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
@@ -392,6 +393,35 @@ class PdfMergerTest {
                 () -> PdfMerger.merge(List.of(all(a), all(missing)), tmp.resolve("out.pdf"), false));
 
         assertTrue(error.getMessage().contains("does not exist"));
+    }
+
+    @Test
+    void protectsOutputWithPassword() throws Exception {
+        Path a = TestPdf.simple(tmp, "a.pdf", "Alpha", 1);
+        Path b = TestPdf.simple(tmp, "b.pdf", "Bravo", 1);
+        Path out = tmp.resolve("out.pdf");
+
+        PdfMerger.merge(List.of(all(a), all(b)), out, false, "secret");
+
+        assertThrows(InvalidPasswordException.class, () -> Loader.loadPDF(out.toFile()));
+        try (PDDocument document = Loader.loadPDF(out.toFile(), "secret")) {
+            assertTrue(document.isEncrypted());
+            assertEquals(256, document.getEncryption().getLength());
+            assertEquals(2, document.getNumberOfPages());
+        }
+    }
+
+    @Test
+    void rejectsEmptyOutputPassword() throws Exception {
+        Path a = TestPdf.simple(tmp, "a.pdf", "Alpha", 1);
+        Path b = TestPdf.simple(tmp, "b.pdf", "Bravo", 1);
+        Path out = tmp.resolve("out.pdf");
+
+        MergeException error = assertThrows(MergeException.class,
+                () -> PdfMerger.merge(List.of(all(a), all(b)), out, false, ""));
+
+        assertTrue(error.getMessage().contains("password"));
+        assertFalse(Files.exists(out));
     }
 
     @Test

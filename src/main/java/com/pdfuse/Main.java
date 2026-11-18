@@ -7,27 +7,32 @@ import java.util.List;
 /** Point d'entrée CLI : pdfuse &lt;input.pdf&gt;... -o &lt;output.pdf&gt; [--force] */
 public final class Main {
 
-    private static final String VERSION = "0.4.0";
+    private static final String VERSION = "0.5.0";
 
     private Main() {
     }
 
     public static void main(String[] args) {
-        if (args.length == 0 || has(args, "-h", "--help")) {
+        if (args.length == 0) {
             usage(System.out);
-            return;
-        }
-        if (has(args, "-V", "--version")) {
-            System.out.println("pdfuse " + VERSION);
             return;
         }
 
         List<String> files = new ArrayList<>();
         String output = null;
+        String password = null;
         boolean force = false;
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             switch (arg) {
+                case "-h", "--help" -> {
+                    usage(System.out);
+                    return;
+                }
+                case "-V", "--version" -> {
+                    System.out.println("pdfuse " + VERSION);
+                    return;
+                }
                 case "-f", "--force" -> force = true;
                 case "-o", "--output" -> {
                     if (i + 1 >= args.length) {
@@ -37,6 +42,15 @@ public final class Main {
                         fail("output specified more than once", 2);
                     }
                     output = args[++i];
+                }
+                case "--password" -> {
+                    if (i + 1 >= args.length) {
+                        fail("missing value for --password", 2);
+                    }
+                    if (password != null) {
+                        fail("password specified more than once", 2);
+                    }
+                    password = args[++i];
                 }
                 default -> {
                     if (arg.startsWith("-")) {
@@ -54,24 +68,13 @@ public final class Main {
         }
 
         try {
-            PdfMerger.Result result = MergeController.merge(files, Path.of(output), force);
+            PdfMerger.Result result = MergeController.merge(files, Path.of(output), force, password);
             System.out.printf("merged %d files, %d pages -> %s (%s, %d ms)%n",
                     result.inputs(), result.pages(), result.output(),
                     humanSize(result.bytes()), result.millis());
         } catch (MergeException e) {
             fail(e.getMessage(), 1);
         }
-    }
-
-    private static boolean has(String[] args, String... options) {
-        for (String arg : args) {
-            for (String option : options) {
-                if (option.equals(arg)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     private static void fail(String message, int code) {
@@ -100,8 +103,9 @@ public final class Main {
         out.println("inputs may be PDFs or images (jpg, png, gif, bmp, tif, tiff)");
         out.println("page ranges are 1-based, e.g. report.pdf:2-5,8");
         out.println();
-        out.println("  -o, --output  merged output file (required)");
-        out.println("  -f, --force   overwrite an existing output file");
+        out.println("  -o, --output    merged output file (required)");
+        out.println("  -f, --force     overwrite an existing output file");
+        out.println("      --password  protect the output with AES-256");
         out.println("  -h, --help    show this help");
         out.println("  -V, --version show the version");
     }

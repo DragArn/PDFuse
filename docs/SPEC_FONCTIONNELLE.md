@@ -3,11 +3,11 @@
 | Élément | Valeur |
 |---|---|
 | Document | Spécification fonctionnelle |
-| Version | 1.1 |
+| Version | 1.2 |
 | Date | 2026-11-18 |
-| S'applique à | PDFuse 0.4.0 |
+| S'applique à | PDFuse 0.5.0 |
 | Référence d'usage | [README.md](../README.md) |
-| Statut | Base de référence pour la v0.4.0 |
+| Statut | Base de référence pour la v0.5.0 |
 
 ## 1. Objet
 
@@ -40,6 +40,7 @@ et ce document doivent alors être corrigés ensemble.
 - fusion de 2 à N entrées ;
 - entrées PDF et images mélangées ;
 - extraction d'une plage de pages par entrée ;
+- protection optionnelle de la sortie par mot de passe (AES-256) ;
 - écriture d'un PDF unique ;
 - préservation de la structure documentaire des PDF ;
 - gestion explicite des erreurs et codes de sortie ;
@@ -93,6 +94,7 @@ interne depuis la GUI).
 | FR-17 | Extraire une plage de pages par entrée | Must | `doc.pdf:2-5` ne garde que les pages 2 à 5 |
 | FR-18 | Nettoyer les références des pages retirées | Must | Signets, liens et champs hors plage supprimés |
 | FR-19 | Valider les plages contre le nombre de pages | Must | Plage hors document refusée avec le compte réel |
+| FR-20 | Chiffrer la sortie sur demande | Must | `--password` produit un PDF AES-256 exigeant le mot de passe |
 
 ### FR-01 — Nombre d'entrées
 
@@ -238,6 +240,13 @@ Une plage dont la borne dépasse le nombre de pages du document est refusée
 avec un message indiquant la plage et le nombre réel de pages. Une image
 accepte uniquement la page 1.
 
+### FR-20 — Protection de la sortie
+
+`--password <mdp>` chiffre le document produit en **AES-256** (R6, V5). Le
+mot de passe est exigé à l'ouverture. Le même secret sert de mot de passe
+propriétaire ; les permissions par défaut sont toutes accordées. Un mot de
+passe vide est refusé. Sans option, la sortie n'est pas chiffrée.
+
 ## 5. Règles métier
 
 | ID | Règle |
@@ -258,6 +267,7 @@ accepte uniquement la page 1.
 | BR-14 | Les pages extraites suivent l'ordre du document, sans doublon. |
 | BR-15 | Une extraction ne doit laisser aucune référence vers une page retirée. |
 | BR-16 | Une plage hors document est une erreur, jamais un ajustement silencieux. |
+| BR-17 | La sortie n'est chiffrée que si `--password` est fourni et non vide. |
 
 ## 6. Contrat d'interface CLI
 
@@ -275,6 +285,7 @@ pdfuse <input[:pages]> <input[:pages]> [...] -o <output.pdf> [--force]
 |---|---|---|
 | `-o`, `--output` | oui | Fichier PDF de sortie |
 | `-f`, `--force` | non | Remplace une sortie existante |
+| `--password` | non | Chiffre la sortie en AES-256 |
 | `-h`, `--help` | non | Affiche l'aide, code 0 |
 | `-V`, `--version` | non | Affiche la version, code 0 |
 
@@ -285,7 +296,7 @@ Une option inconnue commençant par `-` est une erreur d'usage (code 2).
 | Code | Signification |
 |---|---|
 | `0` | Succès |
-| `1` | Erreur métier : entrée absente/illisible, PDF invalide, plage invalide, sortie existante, etc. |
+| `1` | Erreur métier : entrée absente/illisible, PDF invalide, plage invalide, mot de passe vide, sortie existante, etc. |
 | `2` | Usage incorrect : option inconnue, `-o` manquant, moins de 2 entrées |
 
 ### 6.4 Flux
@@ -308,6 +319,9 @@ java -jar target/pdfuse.jar a.pdf photo.jpg scan.PNG b.pdf -o sortie.pdf
 
 # Extraction de plages
 java -jar target/pdfuse.jar rapport.pdf:2-5 annexe.pdf:1,4 -o sortie.pdf
+
+# Sortie protégée par mot de passe
+java -jar target/pdfuse.jar a.pdf b.pdf -o confidentiel.pdf --password secret
 
 # Écrasement explicite
 java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
@@ -350,6 +364,7 @@ java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
 | AC-18 | Extraction retirant la cible d'un signet/lien/champ | Références orphelines supprimées |
 | AC-19 | `a.pdf:3` sur un document de 2 pages | Code 1, message avec le compte réel |
 | AC-20 | Image en première entrée + PDF avec labels | `/PageLabels` commence à 0 |
+| AC-21 | Fusion avec `--password secret` | Ouverture sans mot de passe refusée ; AES-256 avec `secret` |
 
 ## 9. Correspondance README ↔ spécification
 
@@ -359,6 +374,7 @@ java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
 | Usage | FR-01, FR-02, FR-03, FR-12, FR-13, FR-14, FR-15 |
 | Images | FR-04, FR-05, BR-03 à BR-06 |
 | Extraction de pages | FR-17, FR-18, FR-19, BR-13 à BR-16 |
+| Protection de la sortie | FR-20, BR-17 |
 | Tests | NFR-05 |
 | Ce que le merge préserve | FR-06 à FR-10 |
 | Limites connues | Section 10 ci-dessous |
@@ -377,6 +393,9 @@ java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
   vers une page retirée peut rester inerte.
 - Fusionner ou extraire un PDF signé invalide sa signature ; aucun
   avertissement n'est encore émis.
+- Le mot de passe de sortie est visible dans l'historique du shell et la
+  liste des processus. Les permissions du PDF protégé ne sont pas
+  configurables (toutes accordées par défaut).
 - La sortie utilise des xref streams : qpdf émet un avertissement bénin
   (« xref entry for the xref stream itself is missing »), sans impact sur la
   validité constatée par `pdfcpu` et PDFium.
@@ -410,6 +429,7 @@ Livré en 0.4.0 : extraction de plages de pages (FR-17 à FR-19).
 | Tests unitaires via Maven | Demande | Livré (15 tests) |
 | Détection et conversion d'images | Demande | Livré en 0.3.0 |
 | Extraction d'une plage par entrée | Demande | Livré en 0.4.0 |
+| Mot de passe de sortie AES-256 | Demande | Livré en 0.5.0 |
 | Spécification fonctionnelle | Demande | Ce document |
 
 ## 13. Glossaire
