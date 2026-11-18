@@ -3,11 +3,11 @@
 | Élément | Valeur |
 |---|---|
 | Document | Spécification fonctionnelle |
-| Version | 1.0 |
+| Version | 1.1 |
 | Date | 2026-11-18 |
-| S'applique à | PDFuse 0.3.0 |
+| S'applique à | PDFuse 0.4.0 |
 | Référence d'usage | [README.md](../README.md) |
-| Statut | Base de référence pour la v0.3.0 |
+| Statut | Base de référence pour la v0.4.0 |
 
 ## 1. Objet
 
@@ -39,6 +39,7 @@ et ce document doivent alors être corrigés ensemble.
 - exécution en ligne de commande (batch, scriptable) ;
 - fusion de 2 à N entrées ;
 - entrées PDF et images mélangées ;
+- extraction d'une plage de pages par entrée ;
 - écriture d'un PDF unique ;
 - préservation de la structure documentaire des PDF ;
 - gestion explicite des erreurs et codes de sortie ;
@@ -67,6 +68,7 @@ interne depuis la GUI).
 | CU-03 | Remplacer une sortie existante | Écrasement uniquement avec `--force` |
 | CU-04 | Fusionner un PDF chiffré (mot de passe utilisateur vide) | Fusion réussie |
 | CU-05 | Diagnostiquer un échec | Message sur `stderr` et code de sortie non nul |
+| CU-06 | Extraire une plage d'un PDF avant fusion | Seules les pages demandées sont fusionnées |
 
 ## 4. Exigences fonctionnelles
 
@@ -88,6 +90,9 @@ interne depuis la GUI).
 | FR-14 | Fournir `--help` et `--version` | Must | Code de sortie 0, texte affiché |
 | FR-15 | Fournir des codes de sortie stables | Must | `0` succès, `1` erreur, `2` usage |
 | FR-16 | Produire des messages d'erreur actionnables | Must | Chemin et cause identifiables |
+| FR-17 | Extraire une plage de pages par entrée | Must | `doc.pdf:2-5` ne garde que les pages 2 à 5 |
+| FR-18 | Nettoyer les références des pages retirées | Must | Signets, liens et champs hors plage supprimés |
+| FR-19 | Valider les plages contre le nombre de pages | Must | Plage hors document refusée avec le compte réel |
 
 ### FR-01 — Nombre d'entrées
 
@@ -198,6 +203,41 @@ La sortie ne peut jamais être l'une des entrées, même avec `--force`.
 
 Voir le contrat CLI en section 6.
 
+### FR-17 — Extraction de pages
+
+Chaque entrée accepte un suffixe `:plage` :
+
+```
+rapport.pdf:2-5
+annexe.pdf:1,4
+scan.pdf:1-3,7,10-12
+```
+
+Les pages sont numérotées à partir de 1, bornes incluses, séparées par des
+virgules. Les index sont triés et dédoublonnés : l'ordre de sortie suit
+l'ordre du document, pas l'ordre d'écriture des plages. Sans suffixe, toutes
+les pages sont fusionnées. Une plage couvrant toutes les pages est traitée
+comme une fusion complète.
+
+### FR-18 — Nettoyage après extraction
+
+Lorsqu'un document est réduit à une plage :
+
+- les signets dont la cible disparaît sont supprimés ; un signet parent dont
+  la cible disparaît mais qui conserve des enfants devient un groupe non
+  cliquable ;
+- les liens `GoTo` vers une page retirée sont supprimés, les cibles
+  numériques restantes sont remappées ;
+- les champs de formulaire dont tous les widgets ont disparu sont retirés ;
+- les labels de pages du document extrait sont retirés ;
+- métadonnées et pièces jointes sont conservées.
+
+### FR-19 — Validation des plages
+
+Une plage dont la borne dépasse le nombre de pages du document est refusée
+avec un message indiquant la plage et le nombre réel de pages. Une image
+accepte uniquement la page 1.
+
 ## 5. Règles métier
 
 | ID | Règle |
@@ -214,16 +254,20 @@ Voir le contrat CLI en section 6.
 | BR-10 | Le répertoire de sortie doit exister ; il n'est pas créé. |
 | BR-11 | Un échec ne doit jamais laisser de sortie partielle. |
 | BR-12 | La sortie ne peut pas être une entrée. |
+| BR-13 | Les plages sont 1-based, bornes incluses. |
+| BR-14 | Les pages extraites suivent l'ordre du document, sans doublon. |
+| BR-15 | Une extraction ne doit laisser aucune référence vers une page retirée. |
+| BR-16 | Une plage hors document est une erreur, jamais un ajustement silencieux. |
 
 ## 6. Contrat d'interface CLI
 
 ### 6.1 Syntaxe
 
 ```
-pdfuse <input> <input> [...] -o <output.pdf> [--force]
+pdfuse <input[:pages]> <input[:pages]> [...] -o <output.pdf> [--force]
 ```
 
-`<input>` accepte un PDF ou une image.
+`<input>` accepte un PDF ou une image. `:pages` est optionnel.
 
 ### 6.2 Options
 
@@ -241,7 +285,7 @@ Une option inconnue commençant par `-` est une erreur d'usage (code 2).
 | Code | Signification |
 |---|---|
 | `0` | Succès |
-| `1` | Erreur métier : entrée absente/illisible, PDF invalide, sortie existante, etc. |
+| `1` | Erreur métier : entrée absente/illisible, PDF invalide, plage invalide, sortie existante, etc. |
 | `2` | Usage incorrect : option inconnue, `-o` manquant, moins de 2 entrées |
 
 ### 6.4 Flux
@@ -261,6 +305,9 @@ java -jar target/pdfuse.jar a.pdf b.pdf c.pdf d.pdf -o sortie.pdf
 
 # Mixte PDF + images
 java -jar target/pdfuse.jar a.pdf photo.jpg scan.PNG b.pdf -o sortie.pdf
+
+# Extraction de plages
+java -jar target/pdfuse.jar rapport.pdf:2-5 annexe.pdf:1,4 -o sortie.pdf
 
 # Écrasement explicite
 java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
@@ -298,6 +345,11 @@ java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
 | AC-13 | `--help` / `--version` | Code 0, texte attendu |
 | AC-14 | Échec en cours de fusion | Aucun `.pdfuse-*.tmp` résiduel |
 | AC-15 | Toute sortie produite | `pdfcpu validate -m strict` : OK |
+| AC-16 | `a.pdf:1` sur un document de 2 pages | 1 page, contenu de la page 1 |
+| AC-17 | `4,2-3` sur un document de 4 pages | Pages 2, 3, 4 dans cet ordre |
+| AC-18 | Extraction retirant la cible d'un signet/lien/champ | Références orphelines supprimées |
+| AC-19 | `a.pdf:3` sur un document de 2 pages | Code 1, message avec le compte réel |
+| AC-20 | Image en première entrée + PDF avec labels | `/PageLabels` commence à 0 |
 
 ## 9. Correspondance README ↔ spécification
 
@@ -306,6 +358,7 @@ java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
 | Build | NFR-02, NFR-08 |
 | Usage | FR-01, FR-02, FR-03, FR-12, FR-13, FR-14, FR-15 |
 | Images | FR-04, FR-05, BR-03 à BR-06 |
+| Extraction de pages | FR-17, FR-18, FR-19, BR-13 à BR-16 |
 | Tests | NFR-05 |
 | Ce que le merge préserve | FR-06 à FR-10 |
 | Limites connues | Section 10 ci-dessous |
@@ -318,12 +371,20 @@ java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
 - GIF animé : seule la première image est utilisée (comportement d'ImageIO).
 - WebP et HEIC non supportés.
 - Pas de réorganisation ni de rotation manuelle des pages.
+- Une extraction retire les labels du document réduit ; ils décrivaient
+  l'ancienne pagination.
+- Les destinations nommées (`/Dests`) ne sont pas filtrées : un lien nommé
+  vers une page retirée peut rester inerte.
+- Fusionner ou extraire un PDF signé invalide sa signature ; aucun
+  avertissement n'est encore émis.
 - La sortie utilise des xref streams : qpdf émet un avertissement bénin
   (« xref entry for the xref stream itself is missing »), sans impact sur la
   validité constatée par `pdfcpu` et PDFium.
 - Pas d'interface graphique dans cet incrément.
 
 ## 11. Backlog
+
+Livré en 0.4.0 : extraction de plages de pages (FR-17 à FR-19).
 
 | Priorité | Élément | Origine |
 |---|---|---|
@@ -348,6 +409,7 @@ java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
 | Sortie via `-o` obligatoire | Décision d'interface | Livré en 0.2.0 |
 | Tests unitaires via Maven | Demande | Livré (15 tests) |
 | Détection et conversion d'images | Demande | Livré en 0.3.0 |
+| Extraction d'une plage par entrée | Demande | Livré en 0.4.0 |
 | Spécification fonctionnelle | Demande | Ce document |
 
 ## 13. Glossaire

@@ -7,7 +7,7 @@ import java.util.List;
 /** Point d'entrée CLI : pdfuse &lt;input.pdf&gt;... -o &lt;output.pdf&gt; [--force] */
 public final class Main {
 
-    private static final String VERSION = "0.3.0";
+    private static final String VERSION = "0.4.0";
 
     private Main() {
     }
@@ -54,8 +54,7 @@ public final class Main {
         }
 
         try {
-            List<Path> inputs = files.stream().map(Path::of).toList();
-            PdfMerger.Result result = PdfMerger.merge(inputs, Path.of(output), force);
+            PdfMerger.Result result = MergeController.merge(files, Path.of(output), force);
             System.out.printf("merged %d files, %d pages -> %s (%s, %d ms)%n",
                     result.inputs(), result.pages(), result.output(),
                     humanSize(result.bytes()), result.millis());
@@ -78,7 +77,7 @@ public final class Main {
     private static void fail(String message, int code) {
         System.err.println("pdfuse: " + message);
         if (code == 2) {
-            System.err.println("usage: pdfuse <input> <input> [...] -o <output.pdf> [--force]");
+            System.err.println("usage: pdfuse <input[:pages]> <input[:pages]> [...] -o <output.pdf> [--force]");
         }
         System.exit(code);
     }
@@ -96,9 +95,10 @@ public final class Main {
     private static void usage(java.io.PrintStream out) {
         out.println("pdfuse " + VERSION + " - merge PDF files and images");
         out.println();
-        out.println("usage: pdfuse <input> <input> [...] -o <output.pdf> [--force]");
+        out.println("usage: pdfuse <input[:pages]> <input[:pages]> [...] -o <output.pdf> [--force]");
         out.println();
         out.println("inputs may be PDFs or images (jpg, png, gif, bmp, tif, tiff)");
+        out.println("page ranges are 1-based, e.g. report.pdf:2-5,8");
         out.println();
         out.println("  -o, --output  merged output file (required)");
         out.println("  -f, --force   overwrite an existing output file");
