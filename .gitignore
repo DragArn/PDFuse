@@ -1,0 +1,12 @@
+target/
+.venv/
+research/bin/
+research/big/
+research/js/node_modules/
+research/out/
+*.class
+*.log
+.idea/
+*.iml
+__pycache__/
+*.pyc
