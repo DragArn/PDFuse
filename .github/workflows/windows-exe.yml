@@ -1,0 +1,55 @@
+name: Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build shaded jar
+        run: mvn -B -DskipTests package
+
+      - name: Prepare jpackage input
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist\input | Out-Null
+          Copy-Item target\pdfuse.jar dist\input\
+
+      - name: Build .exe installer
+        shell: pwsh
+        run: |
+          jpackage --type exe --name PDFuse --app-version 0.6.0 `
+            --input dist\input --main-jar pdfuse.jar --main-class com.pdfuse.ui.PdfUseApp `
+            --icon packaging\windows\pdfuse.ico --vendor PDFuse `
+            --win-dir-chooser --win-menu --win-shortcut --win-per-user-install `
+            --dest dist
+
+      - name: Build portable app-image
+        shell: pwsh
+        run: |
+          jpackage --type app-image --name PDFuse --app-version 0.6.0 `
+            --input dist\input --main-jar pdfuse.jar --main-class com.pdfuse.ui.PdfUseApp `
+            --icon packaging\windows\pdfuse.ico --dest dist\portable
+          Compress-Archive -Path dist\portable\PDFuse\* `
+            -DestinationPath dist\PDFuse-windows-portable.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PDFuse-windows
+          path: |
+            dist/PDFuse-0.6.0.exe
+            dist/PDFuse-windows-portable.zip

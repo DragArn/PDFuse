@@ -12,6 +12,24 @@ mvn package
 
 Produit `target/pdfuse.jar` (jar exécutable, PDFBox inclus).
 
+## Windows
+
+### Portable, depuis Linux/WSL
+
+```bash
+bash packaging/windows/build-portable.sh
+```
+
+Produit `target/PDFuse-windows-0.6.0-portable.zip` : `PDFuse.exe` + JRE Temurin
+21, sans Java requis sur la machine cible. L'exe n'est pas signé.
+
+### Installeur `.exe`
+
+Le workflow `.github/workflows/windows-exe.yml` construit un installeur
+`jpackage` sur un runner Windows. Il faut pousser le dépôt, puis lancer
+**Actions → Windows installer → Run workflow**. Détails :
+[`packaging/windows/README.md`](packaging/windows/README.md).
+
 ## Usage
 
 ```bash
@@ -157,6 +175,7 @@ légèrement corrompus (xref/startxref manquant) sont récupérés par PDFBox.
 - Le glisser-déposer **entre Windows et WSLg** n'est pas ponté par WSLg :
   depuis l'Explorateur Windows, utiliser `Browse...` ou cliquer sur la zone de
   dépôt. Le drop fonctionne entre applications d'un même bureau.
+- L'exe Windows n'est pas signé : SmartScreen peut demander une confirmation.
 - La sortie utilise des xref streams ; qpdf émet un avertissement bénin
   (« xref entry for the xref stream itself is missing »), validé par
   `pdfcpu validate -m strict` et lisible par PDFium/Acrobat.
@@ -181,6 +200,13 @@ src/main/java/com/pdfuse/ui/
   BannerPanel.java     bandeau illustré + reflet animé
 
 src/main/resources/ui/banner.png
+
+packaging/windows/
+  build-portable.sh   exe portable + JRE
+  pdfuse.ico          icône Windows
+  README.md
+
+.github/workflows/windows-exe.yml
 ```
 
 L'écriture est atomique : le PDF est produit dans un fichier temporaire du
