@@ -12,6 +12,9 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+    env:
+      SIGN_PFX_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+      SIGN_PFX_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,6 +32,13 @@ jobs:
           New-Item -ItemType Directory -Force dist\input | Out-Null
           Copy-Item target\pdfuse.jar dist\input\
 
+      - name: Decode signing certificate
+        if: env.SIGN_PFX_BASE64 != ''
+        shell: pwsh
+        run: |
+          [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\pdfuse.pfx",
+            [Convert]::FromBase64String($env:SIGN_PFX_BASE64))
+
       - name: Build .exe installer
         shell: pwsh
         run: |
@@ -38,12 +48,30 @@ jobs:
             --win-dir-chooser --win-menu --win-shortcut --win-per-user-install `
             --dest dist
 
+      - name: Sign installer
+        if: env.SIGN_PFX_BASE64 != ''
+        shell: pwsh
+        run: |
+          .\packaging\windows\sign.ps1 -File dist\PDFuse-0.6.0.exe `
+            -Pfx "$env:RUNNER_TEMP\pdfuse.pfx" -Password "$env:SIGN_PFX_PASSWORD"
+
       - name: Build portable app-image
         shell: pwsh
         run: |
           jpackage --type app-image --name PDFuse --app-version 0.6.0 `
             --input dist\input --main-jar pdfuse.jar --main-class com.pdfuse.ui.PdfUseApp `
             --icon packaging\windows\pdfuse.ico --dest dist\portable
+
+      - name: Sign portable exe
+        if: env.SIGN_PFX_BASE64 != ''
+        shell: pwsh
+        run: |
+          .\packaging\windows\sign.ps1 -File dist\portable\PDFuse\PDFuse.exe `
+            -Pfx "$env:RUNNER_TEMP\pdfuse.pfx" -Password "$env:SIGN_PFX_PASSWORD"
+
+      - name: Zip portable app-image
+        shell: pwsh
+        run: |
           Compress-Archive -Path dist\portable\PDFuse\* `
             -DestinationPath dist\PDFuse-windows-portable.zip
 

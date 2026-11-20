@@ -371,6 +371,7 @@ java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
 | NFR-07 | Aucun fichier temporaire résiduel après succès ou échec. |
 | NFR-08 | Le jar produit est autonome (`target/pdfuse.jar`). |
 | NFR-09 | Un paquet Windows portable (`PDFuse.exe` + JRE) est constructible depuis Linux ; un installeur `.exe` est produit par `jpackage` sur un runner Windows. |
+| NFR-10 | La chaîne accepte un certificat de signature via secrets ; sans certificat, les artefacts sont explicitement non signés. |
 
 ## 8. Critères d'acceptation
 
@@ -472,6 +473,7 @@ Livré en 0.6.0 : interface graphique Swing (FR-21).
 | Mot de passe de sortie AES-256 | Demande | Livré en 0.5.0 |
 | Interface graphique Swing (2 lignes, Browse, Pages, Add/Remove) | Demande | Livré en 0.6.0 |
 | Packaging Windows portable + workflow installeur | Demande | Livré en 0.6.0 |
+| Signature Windows (CI + script local) | Demande | Chaîne prête, certificat à fournir |
 | Spécification fonctionnelle | Demande | Ce document |
 
 ## 13. Glossaire

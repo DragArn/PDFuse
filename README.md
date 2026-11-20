@@ -21,7 +21,8 @@ bash packaging/windows/build-portable.sh
 ```
 
 Produit `target/PDFuse-windows-0.6.0-portable.zip` : `PDFuse.exe` + JRE Temurin
-21, sans Java requis sur la machine cible. L'exe n'est pas signé.
+21, sans Java requis sur la machine cible. L'exe n'est pas signé : voir la
+section signature de [`packaging/windows/README.md`](packaging/windows/README.md#signature-windows).
 
 ### Installeur `.exe`
 
