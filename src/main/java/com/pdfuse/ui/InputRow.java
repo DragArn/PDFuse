@@ -19,6 +19,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 /** Une ligne de saisie : chemin + bouton parcourir + plage de pages. */
 final class InputRow extends JPanel {
 
+    private static final int FIELD_HEIGHT = 34;
+    private static final float FIELD_FONT_SIZE = 14f;
+
     private final JTextField pathField = new JTextField();
     private final JTextField pagesField = new JTextField();
     private final JButton browseButton = new JButton("Browse...");
@@ -26,15 +29,25 @@ final class InputRow extends JPanel {
     InputRow(String path) {
         super(new GridBagLayout());
         setOpaque(false);
-        setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
 
         pathField.setText(path);
+        pathField.setFont(pathField.getFont().deriveFont(FIELD_FONT_SIZE));
+        pathField.setPreferredSize(new Dimension(200, FIELD_HEIGHT));
         pathField.putClientProperty("JTextField.placeholderText", "PDF or image path");
         pathField.setToolTipText("Path to a PDF or an image");
 
         pagesField.setColumns(8);
+        pagesField.setFont(pagesField.getFont().deriveFont(FIELD_FONT_SIZE));
+        pagesField.setPreferredSize(new Dimension(96, FIELD_HEIGHT));
         pagesField.putClientProperty("JTextField.placeholderText", "all");
         pagesField.setToolTipText("Pages to keep, 1-based: 1-3,5. Empty = all pages");
+
+        browseButton.setFont(browseButton.getFont().deriveFont(FIELD_FONT_SIZE));
+        browseButton.setPreferredSize(new Dimension(104, FIELD_HEIGHT));
+
+        JLabel pagesLabel = new JLabel("Pages");
+        pagesLabel.setFont(pagesLabel.getFont().deriveFont(FIELD_FONT_SIZE));
 
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.gridy = 0;
@@ -52,7 +65,7 @@ final class InputRow extends JPanel {
 
         constraints.gridx = 2;
         constraints.insets = new Insets(0, 8, 0, 6);
-        add(new JLabel("Pages"), constraints);
+        add(pagesLabel, constraints);
 
         constraints.gridx = 3;
         constraints.insets = new Insets(0, 0, 0, 0);
