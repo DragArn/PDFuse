@@ -65,13 +65,13 @@ cat > "$CONFIG" <<EOF
     <fileVersion>$VERSION.0</fileVersion>
     <txtFileVersion>$VERSION</txtFileVersion>
     <fileDescription>PDFuse - merge PDF and images</fileDescription>
-    <copyright>PDFuse</copyright>
+    <copyright>Anraud Dragassi</copyright>
     <productVersion>$VERSION.0</productVersion>
     <txtProductVersion>$VERSION</txtProductVersion>
     <productName>PDFuse</productName>
     <internalName>PDFuse</internalName>
     <originalFilename>PDFuse.exe</originalFilename>
-    <companyName>PDFuse</companyName>
+    <companyName>Anraud Dragassi</companyName>
   </versionInfo>
 </launch4jConfig>
 EOF

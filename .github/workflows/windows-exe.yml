@@ -44,7 +44,7 @@ jobs:
         run: |
           jpackage --type exe --name PDFuse --app-version 0.6.0 `
             --input dist\input --main-jar pdfuse.jar --main-class com.pdfuse.ui.PdfUseApp `
-            --icon packaging\windows\pdfuse.ico --vendor PDFuse `
+            --icon packaging\windows\pdfuse.ico --vendor "Anraud Dragassi" `
             --win-dir-chooser --win-menu --win-shortcut --win-per-user-install `
             --dest dist
 
@@ -60,7 +60,7 @@ jobs:
         run: |
           jpackage --type app-image --name PDFuse --app-version 0.6.0 `
             --input dist\input --main-jar pdfuse.jar --main-class com.pdfuse.ui.PdfUseApp `
-            --icon packaging\windows\pdfuse.ico --dest dist\portable
+            --icon packaging\windows\pdfuse.ico --vendor "Anraud Dragassi" --dest dist\portable
 
       - name: Sign portable exe
         if: env.SIGN_PFX_BASE64 != ''
