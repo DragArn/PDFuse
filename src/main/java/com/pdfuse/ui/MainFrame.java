@@ -10,10 +10,13 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.KeyboardFocusManager;
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
@@ -41,6 +44,9 @@ import com.pdfuse.PdfMerger;
 /** Fenêtre principale de PDFuse. */
 final class MainFrame extends JFrame {
 
+    private static final Set<String> INPUT_EXTENSIONS = Set.of(
+            "pdf", "jpg", "jpeg", "png", "gif", "bmp", "tif", "tiff");
+
     private final BannerPanel banner = new BannerPanel();
     private final JPanel rowsPanel = new JPanel();
     private final JScrollPane scrollPane;
@@ -62,7 +68,7 @@ final class MainFrame extends JFrame {
     MainFrame(List<String> initialPaths) {
         super("PDFuse");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setSize(1000, 740);
+        setSize(1000, 760);
         setLocationRelativeTo(null);
         mergePulse.setCoalesce(true);
 
@@ -128,9 +134,13 @@ final class MainFrame extends JFrame {
         south.add(outputPanel, BorderLayout.NORTH);
         south.add(statusPanel, BorderLayout.SOUTH);
 
+        JPanel topPanel = new JPanel(new BorderLayout(0, 10));
+        topPanel.add(banner, BorderLayout.NORTH);
+        topPanel.add(new DropZone(this::addDroppedFiles), BorderLayout.SOUTH);
+
         JPanel content = new JPanel(new BorderLayout(0, 12));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-        content.add(banner, BorderLayout.NORTH);
+        content.add(topPanel, BorderLayout.NORTH);
         content.add(listPanel, BorderLayout.CENTER);
         content.add(south, BorderLayout.SOUTH);
 
@@ -165,6 +175,48 @@ final class MainFrame extends JFrame {
             scrollPane.getVerticalScrollBar()
                     .setValue(scrollPane.getVerticalScrollBar().getMaximum());
         });
+    }
+
+    private void addDroppedFiles(List<File> files) {
+        int added = 0;
+        int ignored = 0;
+        for (File file : files) {
+            Path path = file.toPath();
+            if (!Files.isRegularFile(path) || !isSupported(path)) {
+                ignored++;
+                continue;
+            }
+
+            InputRow target = null;
+            for (InputRow row : rows) {
+                if (row.path().isEmpty()) {
+                    target = row;
+                    break;
+                }
+            }
+            if (target == null) {
+                addRow(path.toAbsolutePath().toString());
+            } else {
+                target.setPath(path.toAbsolutePath().toString());
+                target.focusPath();
+                rowsPanel.scrollRectToVisible(target.getBounds());
+            }
+            added++;
+        }
+
+        if (added > 0) {
+            status.setText(added == 1 ? "File added" : added + " files added");
+        } else if (ignored > 0) {
+            status.setText("Ignored " + ignored + " unsupported file(s)");
+        }
+        rowsPanel.revalidate();
+        rowsPanel.repaint();
+    }
+
+    private static boolean isSupported(Path path) {
+        String name = path.getFileName().toString().toLowerCase(Locale.ROOT);
+        int dot = name.lastIndexOf('.');
+        return dot > 0 && INPUT_EXTENSIONS.contains(name.substring(dot + 1));
     }
 
     private void removeRow() {

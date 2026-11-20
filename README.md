@@ -45,7 +45,9 @@ Chaque ligne représente un fichier :
 - chemin éditable + `Browse...` (PDF ou image) ;
 - champ `Pages` pour la plage à extraire (`1-3,5`), vide ou `all` pour tout ;
 - boutons `Add row` et `Remove row`, avec au moins une ligne conservée ;
-- deux lignes sont créées au démarrage.
+- deux lignes sont créées au démarrage ;
+- zone de dépôt : chaque fichier déposé remplit la première ligne dont le
+  chemin est vide, sinon ajoute une ligne.
 
 Le chemin de sortie se choisit avec `Save as...`, `Overwrite` autorise le
 remplacement, et `Merge` lance la fusion en arrière-plan sans bloquer
@@ -172,6 +174,7 @@ src/main/java/com/pdfuse/ui/
   PdfUseApp.java       point d'entrée GUI (FlatLaf)
   MainFrame.java       fenêtre, lignes, validation, merge en arrière-plan
   InputRow.java        chemin + Browse + Pages
+  DropZone.java        glisser-déposer -> première ligne vide ou nouvelle ligne
   BannerPanel.java     bandeau illustré + reflet animé
 
 src/main/resources/ui/banner.png

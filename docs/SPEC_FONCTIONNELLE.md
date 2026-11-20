@@ -258,6 +258,8 @@ passe vide est refusé. Sans option, la sortie n'est pas chiffrée.
 - `Add row` ajoute une ligne, `Remove row` retire la ligne sélectionnée ou la
   dernière, avec un minimum de une ligne ;
 - sortie via `Save as...`, option `Overwrite`, bouton `Merge` ;
+- zone de dépôt : chaque fichier déposé remplit la première ligne dont le
+  chemin est vide, sinon ajoute une ligne ;
 - bandeau illustré avec reflet animé pendant le merge ;
 - le merge s'exécute hors EDT (`SwingWorker`), l'interface reste réactive ;
 - les lignes entièrement vides sont ignorées ; une plage sans chemin est une
@@ -285,6 +287,7 @@ passe vide est refusé. Sans option, la sortie n'est pas chiffrée.
 | BR-16 | Une plage hors document est une erreur, jamais un ajustement silencieux. |
 | BR-17 | La sortie n'est chiffrée que si `--password` est fourni et non vide. |
 | BR-18 | La GUI démarre avec 2 lignes et en conserve toujours au moins 1. |
+| BR-19 | Un fichier déposé remplit la première ligne sans chemin ; sinon une ligne est ajoutée. |
 
 ## 6. Contrat d'interface CLI
 
@@ -395,6 +398,7 @@ java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
 | AC-22 | Lancement de `--gui` | Deux lignes, Browse, Pages, Add row / Remove row |
 | AC-23 | Suppression jusqu'à une ligne | Remove désactivé, une ligne conservée |
 | AC-24 | Merge depuis la GUI | Même backend, erreurs affichées en dialogue |
+| AC-25 | Dépôt de 3 fichiers sur 2 lignes vides | Lignes 1 et 2 remplies, 3e ligne ajoutée ; 4e dépôt ajoute une ligne |
 
 ## 9. Correspondance README ↔ spécification
 
