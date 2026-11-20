@@ -46,8 +46,8 @@ Chaque ligne représente un fichier :
 - champ `Pages` pour la plage à extraire (`1-3,5`), vide ou `all` pour tout ;
 - boutons `Add row` et `Remove row`, avec au moins une ligne conservée ;
 - deux lignes sont créées au démarrage ;
-- zone de dépôt : chaque fichier déposé remplit la première ligne dont le
-  chemin est vide, sinon ajoute une ligne.
+- zone de dépôt, également cliquable : chaque fichier déposé remplit la
+  première ligne dont le chemin est vide, sinon ajoute une ligne.
 
 Le chemin de sortie se choisit avec `Save as...`, `Overwrite` autorise le
 remplacement, et `Merge` lance la fusion en arrière-plan sans bloquer
@@ -154,6 +154,9 @@ légèrement corrompus (xref/startxref manquant) sont récupérés par PDFBox.
   encore émis.
 - `--password` est visible dans l'historique du shell et la liste des
   processus ; les permissions du PDF protégé ne sont pas configurables.
+- Le glisser-déposer **entre Windows et WSLg** n'est pas ponté par WSLg :
+  depuis l'Explorateur Windows, utiliser `Browse...` ou cliquer sur la zone de
+  dépôt. Le drop fonctionne entre applications d'un même bureau.
 - La sortie utilise des xref streams ; qpdf émet un avertissement bénin
   (« xref entry for the xref stream itself is missing »), validé par
   `pdfcpu validate -m strict` et lisible par PDFium/Acrobat.

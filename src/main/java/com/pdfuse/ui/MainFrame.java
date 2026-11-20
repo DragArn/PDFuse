@@ -136,7 +136,8 @@ final class MainFrame extends JFrame {
 
         JPanel topPanel = new JPanel(new BorderLayout(0, 10));
         topPanel.add(banner, BorderLayout.NORTH);
-        topPanel.add(new DropZone(this::addDroppedFiles), BorderLayout.SOUTH);
+        topPanel.add(new DropZone(this::addFiles, this::chooseFilesForDropZone),
+                BorderLayout.SOUTH);
 
         JPanel content = new JPanel(new BorderLayout(0, 12));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
@@ -177,7 +178,19 @@ final class MainFrame extends JFrame {
         });
     }
 
-    private void addDroppedFiles(List<File> files) {
+    private void chooseFilesForDropZone() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setMultiSelectionEnabled(true);
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                "PDF and images", "pdf", "jpg", "jpeg", "png", "gif", "bmp", "tif", "tiff");
+        chooser.addChoosableFileFilter(filter);
+        chooser.setFileFilter(filter);
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            addFiles(List.of(chooser.getSelectedFiles()));
+        }
+    }
+
+    private void addFiles(List<File> files) {
         int added = 0;
         int ignored = 0;
         for (File file : files) {

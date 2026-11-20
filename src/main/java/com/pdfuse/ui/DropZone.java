@@ -2,6 +2,7 @@ package com.pdfuse.ui;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagLayout;
@@ -12,6 +13,8 @@ import java.awt.dnd.DropTargetAdapter;
 import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.List;
 import java.util.function.Consumer;
@@ -35,17 +38,17 @@ final class DropZone extends JPanel {
     private static final Color IDLE_TEXT = new Color(0x2D3446);
     private static final Color ARMED_TEXT = new Color(0x3E5EDC);
 
-    private final JLabel title = new JLabel("Drop files here");
+    private final JLabel title = new JLabel("Drop files here or click to browse");
     private final JLabel hint = new JLabel("PDF or images — added to the list");
     private final Border idleBorder;
     private final Border armedBorder;
 
-    DropZone(Consumer<List<File>> onDrop) {
+    DropZone(Consumer<List<File>> onDrop, Runnable onBrowse) {
         setLayout(new GridBagLayout());
         setOpaque(true);
         setBackground(IDLE_BG);
         setPreferredSize(new Dimension(0, 62));
-        setToolTipText("Drop PDF or image files here");
+        setToolTipText("Drop PDF or image files here, or click to browse");
 
         idleBorder = BorderFactory.createCompoundBorder(
                 BorderFactory.createDashedBorder(IDLE_BORDER, 2f, 7f, 5f, true),
@@ -70,6 +73,20 @@ final class DropZone extends JPanel {
         text.add(Box.createVerticalStrut(2));
         text.add(hint);
         add(text);
+
+        MouseAdapter browseOnClick = new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                if (SwingUtilities.isLeftMouseButton(event)) {
+                    onBrowse.run();
+                }
+            }
+        };
+        Cursor hand = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+        for (Component component : new Component[] {this, text, title, hint}) {
+            component.addMouseListener(browseOnClick);
+            component.setCursor(hand);
+        }
 
         new DropTarget(this, DnDConstants.ACTION_COPY, new DropTargetAdapter() {
             @Override
