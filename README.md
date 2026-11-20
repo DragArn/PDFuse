@@ -38,6 +38,8 @@ Codes de sortie : `0` succès, `1` erreur, `2` usage incorrect.
 java -jar target/pdfuse.jar --gui
 ```
 
+![Interface PDFuse](docs/ui.png)
+
 Chaque ligne représente un fichier :
 
 - chemin éditable + `Browse...` (PDF ou image) ;
@@ -49,6 +51,10 @@ Le chemin de sortie se choisit avec `Save as...`, `Overwrite` autorise le
 remplacement, et `Merge` lance la fusion en arrière-plan sans bloquer
 l'interface. Les erreurs de fichier ou de plage sont affichées dans une boîte
 de dialogue.
+
+Un bandeau illustré occupe le haut de la fenêtre. Pendant le merge, un reflet
+le traverse, le bouton devient `Merging...`, le statut s'anime et la barre de
+progression tourne.
 
 Les lignes peuvent être préremplies :
 
@@ -154,13 +160,21 @@ légèrement corrompus (xref/startxref manquant) sont récupérés par PDFBox.
 
 ```
 src/main/java/com/pdfuse/
-  Main.java           CLI, parsing des arguments, codes de sortie
+  Main.java            CLI, parsing des arguments, codes de sortie
   MergeController.java traduction des entrées CLI et orchestration
-  MergeInput.java     chemin + plage optionnelle
-  PageRange.java      parsing/validation des plages 1-based
-  PdfMerger.java      cœur : merge, extraction, nettoyage, écriture atomique
-  ImageToPdf.java     image -> PDF d'une page (A4, marge, ratio)
-  MergeException.java erreur métier
+  MergeInput.java      chemin + plage optionnelle
+  PageRange.java       parsing/validation des plages 1-based
+  PdfMerger.java       cœur : merge, extraction, nettoyage, écriture atomique
+  ImageToPdf.java      image -> PDF d'une page (A4, marge, ratio)
+  MergeException.java  erreur métier
+
+src/main/java/com/pdfuse/ui/
+  PdfUseApp.java       point d'entrée GUI (FlatLaf)
+  MainFrame.java       fenêtre, lignes, validation, merge en arrière-plan
+  InputRow.java        chemin + Browse + Pages
+  BannerPanel.java     bandeau illustré + reflet animé
+
+src/main/resources/ui/banner.png
 ```
 
 L'écriture est atomique : le PDF est produit dans un fichier temporaire du

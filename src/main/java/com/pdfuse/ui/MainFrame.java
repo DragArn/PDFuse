@@ -30,6 +30,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import javax.swing.Timer;
 import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -40,6 +41,7 @@ import com.pdfuse.PdfMerger;
 /** Fenêtre principale de PDFuse. */
 final class MainFrame extends JFrame {
 
+    private final BannerPanel banner = new BannerPanel();
     private final JPanel rowsPanel = new JPanel();
     private final JScrollPane scrollPane;
     private final List<InputRow> rows = new ArrayList<>();
@@ -51,12 +53,18 @@ final class MainFrame extends JFrame {
     private final JButton mergeButton = new JButton("Merge");
     private final JLabel status = new JLabel("Ready");
     private final JProgressBar progress = new JProgressBar();
+    private int pulse;
+    private final Timer mergePulse = new Timer(350, event -> {
+        status.setText("Merging" + ".".repeat(1 + pulse % 3));
+        pulse++;
+    });
 
     MainFrame(List<String> initialPaths) {
         super("PDFuse");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setSize(1000, 620);
+        setSize(1000, 740);
         setLocationRelativeTo(null);
+        mergePulse.setCoalesce(true);
 
         rowsPanel.setLayout(new BoxLayout(rowsPanel, BoxLayout.Y_AXIS));
         JPanel rowsWrapper = new JPanel(new BorderLayout());
@@ -66,13 +74,19 @@ final class MainFrame extends JFrame {
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-        JPanel rowButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel rowButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         rowButtons.add(addButton);
         rowButtons.add(removeButton);
 
+        JLabel filesLabel = new JLabel("Files to merge");
+        filesLabel.setFont(filesLabel.getFont().deriveFont(Font.BOLD));
+        JPanel listHeader = new JPanel(new BorderLayout());
+        listHeader.add(filesLabel, BorderLayout.WEST);
+        listHeader.add(rowButtons, BorderLayout.EAST);
+
         JPanel listPanel = new JPanel(new BorderLayout(0, 8));
+        listPanel.add(listHeader, BorderLayout.NORTH);
         listPanel.add(scrollPane, BorderLayout.CENTER);
-        listPanel.add(rowButtons, BorderLayout.SOUTH);
 
         JPanel outputPanel = new JPanel(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
@@ -116,6 +130,7 @@ final class MainFrame extends JFrame {
 
         JPanel content = new JPanel(new BorderLayout(0, 12));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        content.add(banner, BorderLayout.NORTH);
         content.add(listPanel, BorderLayout.CENTER);
         content.add(south, BorderLayout.SOUTH);
 
@@ -271,9 +286,17 @@ final class MainFrame extends JFrame {
         removeButton.setEnabled(!busy && rows.size() > 1);
         saveButton.setEnabled(!busy);
         mergeButton.setEnabled(!busy);
+        mergeButton.setText(busy ? "Merging..." : "Merge");
         outputField.setEnabled(!busy);
         overwrite.setEnabled(!busy);
         progress.setVisible(busy);
+        banner.setBusy(busy);
+        if (busy) {
+            pulse = 0;
+            mergePulse.start();
+        } else {
+            mergePulse.stop();
+        }
         for (InputRow row : rows) {
             row.setEditable(!busy);
         }

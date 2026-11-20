@@ -258,6 +258,7 @@ passe vide est refusé. Sans option, la sortie n'est pas chiffrée.
 - `Add row` ajoute une ligne, `Remove row` retire la ligne sélectionnée ou la
   dernière, avec un minimum de une ligne ;
 - sortie via `Save as...`, option `Overwrite`, bouton `Merge` ;
+- bandeau illustré avec reflet animé pendant le merge ;
 - le merge s'exécute hors EDT (`SwingWorker`), l'interface reste réactive ;
 - les lignes entièrement vides sont ignorées ; une plage sans chemin est une
   erreur ; au moins deux fichiers sont requis.
