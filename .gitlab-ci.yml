@@ -1,0 +1,65 @@
+stages:
+  - build
+  - release
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+
+build-portable:
+  stage: build
+  image: maven:3.9-eclipse-temurin-21
+  cache:
+    key: pdfuse-windows-build
+    paths:
+      - .m2/repository/
+      - target/windows-build/
+      - target/windows/jre/
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq curl unzip zip file
+  script:
+    - export PDFUSE_VERSION="${CI_COMMIT_TAG#v}"
+    - bash packaging/windows/build-portable.sh
+    - cp target/PDFuse-windows-*-portable.zip PDFuse-windows-portable.zip
+    - cp target/windows/PDFuse.exe PDFuse.exe
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - PDFuse-windows-portable.zip
+      - PDFuse.exe
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+publish-release:
+  stage: release
+  image: curlimages/curl:latest
+  needs:
+    - build-portable
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - |
+      if [ -n "${GITLAB_TOKEN:-}" ]; then
+        AUTH_HEADER="PRIVATE-TOKEN: ${GITLAB_TOKEN}"
+      else
+        AUTH_HEADER="JOB-TOKEN: ${CI_JOB_TOKEN}"
+      fi
+      curl --fail --silent --show-error --header "$AUTH_HEADER" \
+        --upload-file PDFuse-windows-portable.zip \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/pdfuse/${CI_COMMIT_TAG}/PDFuse-windows-portable.zip"
+      curl --fail --silent --show-error --header "$AUTH_HEADER" \
+        --upload-file PDFuse.exe \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/pdfuse/${CI_COMMIT_TAG}/PDFuse.exe"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    name: "PDFuse $CI_COMMIT_TAG"
+    description: "Portable Windows build (PDFuse.exe + JRE 21). Unsigned executable."
+    assets:
+      links:
+        - name: "Portable Windows (zip, recommended)"
+          url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/pdfuse/$CI_COMMIT_TAG/PDFuse-windows-portable.zip"
+          link_type: package
+        - name: "PDFuse.exe only (JRE required)"
+          url: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/pdfuse/$CI_COMMIT_TAG/PDFuse.exe"
+          link_type: package

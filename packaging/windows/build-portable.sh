@@ -6,7 +6,7 @@ OUT="$ROOT/target/windows"
 CACHE="$ROOT/target/windows-build"
 L4J="$CACHE/launch4j"
 JRE_ZIP="$CACHE/temurin-jre21-win.zip"
-VERSION="$(sed -n 's:.*<version>\(.*\)</version>.*:\1:p' "$ROOT/pom.xml" | head -1)"
+VERSION="${PDFUSE_VERSION:-$(sed -n 's:.*<version>\(.*\)</version>.*:\1:p' "$ROOT/pom.xml" | head -1)}"
 
 mkdir -p "$OUT" "$CACHE"
 

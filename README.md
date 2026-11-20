@@ -31,6 +31,12 @@ Le workflow `.github/workflows/windows-exe.yml` construit un installeur
 **Actions → Windows installer → Run workflow**. Détails :
 [`packaging/windows/README.md`](packaging/windows/README.md).
 
+### Publication GitLab
+
+`.gitlab-ci.yml` construit le portable sur un runner Linux et publie le zip
+dans **Releases + Package Registry** à chaque tag. Procédure :
+[`docs/GITLAB.md`](docs/GITLAB.md).
+
 ## Usage
 
 ```bash
@@ -208,6 +214,8 @@ packaging/windows/
   README.md
 
 .github/workflows/windows-exe.yml
+.gitlab-ci.yml
+docs/GITLAB.md
 ```
 
 L'écriture est atomique : le PDF est produit dans un fichier temporaire du
