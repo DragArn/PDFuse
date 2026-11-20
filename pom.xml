@@ -6,7 +6,7 @@
 
   <groupId>com.pdfuse</groupId>
   <artifactId>pdfuse</artifactId>
-  <version>0.5.0</version>
+  <version>0.6.0</version>
   <packaging>jar</packaging>
 
   <properties>
@@ -19,6 +19,11 @@
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
       <version>3.0.7</version>
+    </dependency>
+    <dependency>
+      <groupId>com.formdev</groupId>
+      <artifactId>flatlaf</artifactId>
+      <version>3.8</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

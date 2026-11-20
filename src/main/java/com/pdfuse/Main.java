@@ -7,12 +7,16 @@ import java.util.List;
 /** Point d'entrée CLI : pdfuse &lt;input.pdf&gt;... -o &lt;output.pdf&gt; [--force] */
 public final class Main {
 
-    private static final String VERSION = "0.5.0";
+    private static final String VERSION = "0.6.0";
 
     private Main() {
     }
 
     public static void main(String[] args) {
+        if (args.length == 1 && args[0].equals("--gui")) {
+            com.pdfuse.ui.PdfUseApp.main(new String[0]);
+            return;
+        }
         if (args.length == 0) {
             usage(System.out);
             return;
@@ -106,7 +110,8 @@ public final class Main {
         out.println("  -o, --output    merged output file (required)");
         out.println("  -f, --force     overwrite an existing output file");
         out.println("      --password  protect the output with AES-256");
-        out.println("  -h, --help    show this help");
-        out.println("  -V, --version show the version");
+        out.println("      --gui       open the graphical interface");
+        out.println("  -h, --help      show this help");
+        out.println("  -V, --version   show the version");
     }
 }

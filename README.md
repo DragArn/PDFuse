@@ -32,6 +32,30 @@ Options :
 
 Codes de sortie : `0` succès, `1` erreur, `2` usage incorrect.
 
+## Interface graphique
+
+```bash
+java -jar target/pdfuse.jar --gui
+```
+
+Chaque ligne représente un fichier :
+
+- chemin éditable + `Browse...` (PDF ou image) ;
+- champ `Pages` pour la plage à extraire (`1-3,5`), vide ou `all` pour tout ;
+- boutons `Add row` et `Remove row`, avec au moins une ligne conservée ;
+- deux lignes sont créées au démarrage.
+
+Le chemin de sortie se choisit avec `Save as...`, `Overwrite` autorise le
+remplacement, et `Merge` lance la fusion en arrière-plan sans bloquer
+l'interface. Les erreurs de fichier ou de plage sont affichées dans une boîte
+de dialogue.
+
+Les lignes peuvent être préremplies :
+
+```bash
+java -cp target/pdfuse.jar com.pdfuse.ui.PdfUseApp a.pdf b.pdf
+```
+
 ## Images
 
 Une entrée dont l'extension est `jpg`, `jpeg`, `png`, `gif`, `bmp`, `tif` ou

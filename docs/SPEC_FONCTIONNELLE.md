@@ -3,11 +3,11 @@
 | Élément | Valeur |
 |---|---|
 | Document | Spécification fonctionnelle |
-| Version | 1.2 |
-| Date | 2026-11-18 |
-| S'applique à | PDFuse 0.5.0 |
+| Version | 1.3 |
+| Date | 2026-11-20 |
+| S'applique à | PDFuse 0.6.0 |
 | Référence d'usage | [README.md](../README.md) |
-| Statut | Base de référence pour la v0.5.0 |
+| Statut | Base de référence pour la v0.6.0 |
 
 ## 1. Objet
 
@@ -34,23 +34,23 @@ et ce document doivent alors être corrigés ensemble.
 
 ## 2. Périmètre
 
-### 2.1 Inclus dans la v0.3.0
+### 2.1 Inclus dans la v0.6.0
 
 - exécution en ligne de commande (batch, scriptable) ;
 - fusion de 2 à N entrées ;
 - entrées PDF et images mélangées ;
 - extraction d'une plage de pages par entrée ;
 - protection optionnelle de la sortie par mot de passe (AES-256) ;
+- interface graphique Swing (FlatLaf) ;
 - écriture d'un PDF unique ;
 - préservation de la structure documentaire des PDF ;
 - gestion explicite des erreurs et codes de sortie ;
 - suite de tests exécutable via Maven.
 
-### 2.2 Exclu de la v0.3.0
+### 2.2 Exclu de la v0.6.0
 
-- interface graphique ;
-- réorganisation, rotation, suppression ou extraction de pages ;
-- mots de passe utilisateur non vides ;
+- réorganisation, rotation ou suppression manuelle de pages ;
+- mots de passe utilisateur non vides en entrée ;
 - OCR, signature numérique, rédaction de contenu ;
 - compression ou optimisation paramétrable ;
 - correction de l'orientation EXIF ;
@@ -59,8 +59,8 @@ et ce document doivent alors être corrigés ensemble.
 
 ## 3. Acteurs et cas d'usage
 
-**Acteur principal** : utilisateur batch (script shell, CI, ou futur appel
-interne depuis la GUI).
+**Acteur principal** : utilisateur batch (script shell, CI) ou utilisateur de
+l'interface graphique.
 
 | ID | Cas d'usage | Résultat attendu |
 |---|---|---|
@@ -70,6 +70,7 @@ interne depuis la GUI).
 | CU-04 | Fusionner un PDF chiffré (mot de passe utilisateur vide) | Fusion réussie |
 | CU-05 | Diagnostiquer un échec | Message sur `stderr` et code de sortie non nul |
 | CU-06 | Extraire une plage d'un PDF avant fusion | Seules les pages demandées sont fusionnées |
+| CU-07 | Fusionner depuis l'interface graphique | Lignes saisies ou parcourues, fusion lancée en arrière-plan |
 
 ## 4. Exigences fonctionnelles
 
@@ -95,6 +96,7 @@ interne depuis la GUI).
 | FR-18 | Nettoyer les références des pages retirées | Must | Signets, liens et champs hors plage supprimés |
 | FR-19 | Valider les plages contre le nombre de pages | Must | Plage hors document refusée avec le compte réel |
 | FR-20 | Chiffrer la sortie sur demande | Must | `--password` produit un PDF AES-256 exigeant le mot de passe |
+| FR-21 | Fournir une interface graphique | Must | Deux lignes par défaut, ajout/suppression, minimum une ligne |
 
 ### FR-01 — Nombre d'entrées
 
@@ -247,6 +249,19 @@ mot de passe est exigé à l'ouverture. Le même secret sert de mot de passe
 propriétaire ; les permissions par défaut sont toutes accordées. Un mot de
 passe vide est refusé. Sans option, la sortie n'est pas chiffrée.
 
+### FR-21 — Interface graphique
+
+`--gui` (ou `com.pdfuse.ui.PdfUseApp`) ouvre une fenêtre Swing avec FlatLaf.
+
+- une ligne par fichier : chemin éditable, bouton `Browse...`, champ `Pages` ;
+- deux lignes au démarrage ;
+- `Add row` ajoute une ligne, `Remove row` retire la ligne sélectionnée ou la
+  dernière, avec un minimum de une ligne ;
+- sortie via `Save as...`, option `Overwrite`, bouton `Merge` ;
+- le merge s'exécute hors EDT (`SwingWorker`), l'interface reste réactive ;
+- les lignes entièrement vides sont ignorées ; une plage sans chemin est une
+  erreur ; au moins deux fichiers sont requis.
+
 ## 5. Règles métier
 
 | ID | Règle |
@@ -268,6 +283,7 @@ passe vide est refusé. Sans option, la sortie n'est pas chiffrée.
 | BR-15 | Une extraction ne doit laisser aucune référence vers une page retirée. |
 | BR-16 | Une plage hors document est une erreur, jamais un ajustement silencieux. |
 | BR-17 | La sortie n'est chiffrée que si `--password` est fourni et non vide. |
+| BR-18 | La GUI démarre avec 2 lignes et en conserve toujours au moins 1. |
 
 ## 6. Contrat d'interface CLI
 
@@ -305,7 +321,17 @@ Une option inconnue commençant par `-` est une erreur d'usage (code 2).
   `merged <n> files, <p> pages -> <chemin> (<taille>, <ms> ms)`.
 - `stderr` : messages d'erreur préfixés par `pdfuse:`.
 
-### 6.5 Exemples
+### 6.5 Interface graphique
+
+```bash
+java -jar target/pdfuse.jar --gui
+java -cp target/pdfuse.jar com.pdfuse.ui.PdfUseApp a.pdf b.pdf
+```
+
+La GUI réutilise `MergeController` ; elle n'ajoute aucune règle métier
+différente du CLI.
+
+### 6.6 Exemples
 
 ```bash
 # Deux PDF
@@ -365,6 +391,9 @@ java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
 | AC-19 | `a.pdf:3` sur un document de 2 pages | Code 1, message avec le compte réel |
 | AC-20 | Image en première entrée + PDF avec labels | `/PageLabels` commence à 0 |
 | AC-21 | Fusion avec `--password secret` | Ouverture sans mot de passe refusée ; AES-256 avec `secret` |
+| AC-22 | Lancement de `--gui` | Deux lignes, Browse, Pages, Add row / Remove row |
+| AC-23 | Suppression jusqu'à une ligne | Remove désactivé, une ligne conservée |
+| AC-24 | Merge depuis la GUI | Même backend, erreurs affichées en dialogue |
 
 ## 9. Correspondance README ↔ spécification
 
@@ -375,12 +404,13 @@ java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
 | Images | FR-04, FR-05, BR-03 à BR-06 |
 | Extraction de pages | FR-17, FR-18, FR-19, BR-13 à BR-16 |
 | Protection de la sortie | FR-20, BR-17 |
+| Interface graphique | FR-21, BR-18 |
 | Tests | NFR-05 |
 | Ce que le merge préserve | FR-06 à FR-10 |
 | Limites connues | Section 10 ci-dessous |
 | Structure | NFR-08 |
 
-## 10. Limites connues de la v0.3.0
+## 10. Limites connues de la v0.6.0
 
 - Mot de passe utilisateur non vide non géré.
 - Orientation EXIF ignorée : une photo de smartphone peut être couchée.
@@ -396,6 +426,7 @@ java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
 - Le mot de passe de sortie est visible dans l'historique du shell et la
   liste des processus. Les permissions du PDF protégé ne sont pas
   configurables (toutes accordées par défaut).
+- La GUI nécessite un environnement graphique ; aucun mode headless.
 - La sortie utilise des xref streams : qpdf émet un avertissement bénin
   (« xref entry for the xref stream itself is missing »), sans impact sur la
   validité constatée par `pdfcpu` et PDFium.
@@ -404,10 +435,11 @@ java -jar target/pdfuse.jar a.pdf b.pdf -o sortie.pdf --force
 ## 11. Backlog
 
 Livré en 0.4.0 : extraction de plages de pages (FR-17 à FR-19).
+Livré en 0.6.0 : interface graphique Swing (FR-21).
 
 | Priorité | Élément | Origine |
 |---|---|---|
-| Haute | Interface graphique (cible initiale du produit) | Demande initiale |
+| Haute | Réorganisation des lignes (drag & drop) | Confort GUI |
 | Haute | `--password` par entrée | Limite FR-09 |
 | Moyenne | Correction de l'orientation EXIF | Limite connue |
 | Moyenne | `--image-page fit\|original` | Confort images |
@@ -430,6 +462,7 @@ Livré en 0.4.0 : extraction de plages de pages (FR-17 à FR-19).
 | Détection et conversion d'images | Demande | Livré en 0.3.0 |
 | Extraction d'une plage par entrée | Demande | Livré en 0.4.0 |
 | Mot de passe de sortie AES-256 | Demande | Livré en 0.5.0 |
+| Interface graphique Swing (2 lignes, Browse, Pages, Add/Remove) | Demande | Livré en 0.6.0 |
 | Spécification fonctionnelle | Demande | Ce document |
 
 ## 13. Glossaire
